@@ -531,9 +531,15 @@ function openDetails(movie) {
     " | Rating: " + movie.rating + "/10. " +
     movie.description;
 
-  document.getElementById("trailer-btn").onclick = () => {
-  const url = "https://www.youtube.com/embed?listType=search&list=" +
+   
+document.getElementById("trailer-btn").onclick = () => {
+  const searchUrl =
+    "https://www.youtube.com/results?search_query=" +
     encodeURIComponent(movie.title + " official trailer");
+
+  window.open(searchUrl, "_blank");
+};
+
 
   document.getElementById("dialog-info").innerHTML =
     "<p>Watch a trailer for " + movie.title + " below.</p>" +
