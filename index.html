@@ -1,0 +1,332 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MovieBox | Discover Movies</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #101018;
+      color: white;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      padding: 22px 7%;
+      background: #191923;
+      flex-wrap: wrap;
+    }
+    .logo { font-size: 27px; font-weight: bold; color: #ff375f; }
+    nav { display: flex; gap: 18px; }
+    nav a { color: white; text-decoration: none; }
+    nav a:hover { color: #ff375f; }
+    .hero {
+      padding: 65px 7%;
+      background: linear-gradient(90deg, #191923, #30152c);
+    }
+    .hero h1 { font-size: clamp(32px, 5vw, 52px); margin-bottom: 15px; }
+    .hero p { color: #d0cbd5; margin-bottom: 25px; line-height: 1.7; }
+    .search {
+      width: 100%;
+      max-width: 440px;
+      padding: 14px;
+      border: 1px solid #454052;
+      border-radius: 8px;
+      background: #242431;
+      color: white;
+      font-size: 16px;
+    }
+    main { padding: 35px 7%; }
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+    .section-heading h2 { font-size: 25px; }
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 25px; }
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 7px;
+      padding: 10px 15px;
+      font-weight: bold;
+    }
+    .filter { background: #292936; color: white; }
+    .filter.active, .primary { background: #ff375f; color: white; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+      gap: 23px;
+    }
+    .movie {
+      background: #1b1b26;
+      border-radius: 10px;
+      overflow: hidden;
+      transition: transform .2s;
+    }
+    .movie:hover { transform: translateY(-5px); }
+    .movie img {
+      display: block;
+      width: 100%;
+      height: 255px;
+      object-fit: cover;
+      background: #292936;
+    }
+    .movie-info { padding: 13px; }
+    .movie-info h3 { font-size: 16px; margin-bottom: 9px; }
+    .meta { color: #bcbac8; font-size: 13px; margin-bottom: 12px; }
+    .movie-actions { display: flex; gap: 6px; }
+    .details { background: #343443; color: white; flex: 1; }
+    .favorite { background: #343443; color: #ff5476; }
+    .empty { color: #c4c0ce; padding: 25px 0; }
+    footer {
+      text-align: center;
+      padding: 25px;
+      color: #aaa6b7;
+      background: #191923;
+      margin-top: 35px;
+    }
+    dialog {
+      width: min(90%, 450px);
+      margin: auto;
+      padding: 25px;
+      background: #242431;
+      color: white;
+      border: 1px solid #494354;
+      border-radius: 12px;
+    }
+    dialog::backdrop { background: #000b; }
+    dialog h2 { margin-bottom: 12px; }
+    dialog p { line-height: 1.7; color: #d0cbd5; margin-bottom: 18px; }
+    .close { background: #414151; color: white; }
+    @media (max-width: 500px) {
+      header { padding: 18px 5%; }
+      main { padding: 28px 5%; }
+      .hero { padding: 45px 5%; }
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+      .movie img { height: 220px; }
+      .movie-info { padding: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">🎬 MovieBox</div>
+    <nav>
+      <a href="#home">Home</a>
+      <a href="#movies">Movies</a>
+      <a href="#favorites">Favorites</a>
+    </nav>
+  </header>
+
+  <section class="hero" id="home">
+    <h1>Discover Your Next<br>Favorite Movie.</h1>
+    <p>Explore great stories, discover new films,<br>
+       and keep track of movies you love.</p>
+    <input class="search" id="search" type="search"
+      placeholder="Search for a movie..." aria-label="Search movies">
+  </section>
+
+  <main id="movies">
+    <div class="section-heading">
+      <h2 id="list-title">Popular Movies</h2>
+      <span id="count"></span>
+    </div>
+
+    <div class="filters" id="filters">
+      <button class="filter active" data-category="All">All</button>
+      <button class="filter" data-category="Action">Action</button>
+      <button class="filter" data-category="Adventure">Adventure</button>
+      <button class="filter" data-category="Drama">Drama</button>
+      <button class="filter" data-category="Animation">Animation</button>
+      <button class="filter" data-category="Comedy">Comedy</button>
+    </div>
+
+    <div class="grid" id="movie-grid"></div>
+    <p class="empty" id="empty" hidden>No movies found. Try another search.</p>
+  </main>
+
+  <dialog id="movie-dialog">
+    <h2 id="dialog-title"></h2>
+    <p id="dialog-description"></p>
+    <button class="close" id="close-dialog">Close</button>
+  </dialog>
+
+  <footer>
+    <p>© 2026 MovieBox. Built for a Web Development Project.</p>
+    <p style="margin-top:8px">Discover movies. Enjoy stories.</p>
+  </footer>
+
+  <script>
+    const movies = [
+      {
+        title: "Inception", year: 2010, rating: 8.8, category: "Action",
+        poster: "https://image.tmdb.org/t/p/w500/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg",
+        description: "A skilled thief enters people's dreams to steal secrets and is offered a difficult final mission."
+      },
+      {
+        title: "Interstellar", year: 2014, rating: 8.7, category: "Adventure",
+        poster: "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
+        description: "Explorers travel through space in search of a future for humanity."
+      },
+      {
+        title: "The Dark Knight", year: 2008, rating: 9.0, category: "Action",
+        poster: "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
+        description: "Batman faces a dangerous criminal who threatens Gotham City."
+      },
+      {
+        title: "Coco", year: 2017, rating: 8.4, category: "Animation",
+        poster: "https://image.tmdb.org/t/p/w500/gGEsBPAijhVUFoiNpgZXqRVWJt2.jpg",
+        description: "A young musician enters a colorful world connected to his family's history."
+      },
+      {
+        title: "The Avengers", year: 2012, rating: 8.0, category: "Action",
+        poster: "https://image.tmdb.org/t/p/w500/RYMX2wcKCBAr24UyPD7xwmjaTn.jpg",
+        description: "A team of superheroes joins forces to protect the world from a major threat."
+      },
+      {
+        title: "Finding Nemo", year: 2003, rating: 8.2, category: "Adventure",
+        poster: "https://image.tmdb.org/t/p/w500/eHuGQ10FUzK1mdOY69wF5pGgEf5.jpg",
+        description: "A clownfish crosses the ocean on an unforgettable journey to find his son."
+      },
+      {
+        title: "Joker", year: 2019, rating: 8.4, category: "Drama",
+        poster: "https://image.tmdb.org/t/p/w500/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg",
+        description: "A troubled comedian struggles with rejection in Gotham City."
+      },
+      {
+        title: "Home Alone", year: 1990, rating: 7.7, category: "Comedy",
+        poster: "https://image.tmdb.org/t/p/w500/onTSipZ8R3bliBdKfPtsDuHTdlL.jpg",
+        description: "A young boy must protect his home from two burglars during the holidays."
+      }
+    ];
+
+    const favorites = new Set();
+    let category = "All";
+    let showFavorites = false;
+
+    const grid = document.getElementById("movie-grid");
+    const search = document.getElementById("search");
+    const empty = document.getElementById("empty");
+    const count = document.getElementById("count");
+    const title = document.getElementById("list-title");
+
+    function renderMovies() {
+      const query = search.value.toLowerCase().trim();
+
+      const filtered = movies.filter(movie => {
+        const matchesSearch = movie.title.toLowerCase().includes(query);
+        const matchesCategory = category === "All" ||
+          movie.category === category;
+        const matchesFavorites = !showFavorites ||
+          favorites.has(movie.title);
+
+        return matchesSearch && matchesCategory && matchesFavorites;
+      });
+
+      grid.innerHTML = "";
+      count.textContent = filtered.length + " movies";
+      title.textContent = showFavorites ? "My Favorites" : "Popular Movies";
+      empty.hidden = filtered.length !== 0;
+
+      filtered.forEach(movie => {
+        const card = document.createElement("article");
+        card.className = "movie";
+
+        const img = document.createElement("img");
+        img.src = movie.poster;
+        img.alt = movie.title + " movie poster";
+        img.loading = "lazy";
+        img.onerror = () => {
+          img.alt = movie.title + " poster unavailable";
+          img.style.display = "none";
+        };
+
+        const info = document.createElement("div");
+        info.className = "movie-info";
+
+        const heading = document.createElement("h3");
+        heading.textContent = movie.title;
+
+        const meta = document.createElement("p");
+        meta.className = "meta";
+        meta.textContent = movie.year + " • ⭐ " + movie.rating +
+          " • " + movie.category;
+
+        const actions = document.createElement("div");
+        actions.className = "movie-actions";
+
+        const details = document.createElement("button");
+        details.className = "details";
+        details.textContent = "Details";
+        details.onclick = () => showDetails(movie);
+
+        const favorite = document.createElement("button");
+        favorite.className = "favorite";
+        favorite.textContent = favorites.has(movie.title) ? "♥" : "♡";
+        favorite.setAttribute("aria-label", "Toggle favorite " + movie.title);
+        favorite.onclick = () => {
+          if (favorites.has(movie.title)) favorites.delete(movie.title);
+          else favorites.add(movie.title);
+          renderMovies();
+        };
+
+        actions.append(details, favorite);
+        info.append(heading, meta, actions);
+        card.append(img, info);
+        grid.append(card);
+      });
+    }
+
+    function showDetails(movie) {
+      document.getElementById("dialog-title").textContent = movie.title;
+      document.getElementById("dialog-description").textContent =
+        movie.year + " | " + movie.category + " | Rating: " +
+        movie.rating + "/10. " + movie.description;
+      document.getElementById("movie-dialog").showModal();
+    }
+
+    search.addEventListener("input", renderMovies);
+
+    document.getElementById("filters").addEventListener("click", event => {
+      const button = event.target.closest("button[data-category]");
+      if (!button) return;
+
+      category = button.dataset.category;
+      showFavorites = false;
+      document.querySelectorAll(".filter").forEach(item =>
+        item.classList.toggle("active", item === button)
+      );
+      renderMovies();
+    });
+
+    document.querySelector('a[href="#favorites"]').addEventListener("click", () => {
+      showFavorites = true;
+      category = "All";
+      document.querySelectorAll(".filter").forEach(item =>
+        item.classList.toggle("active", item.dataset.category === "All")
+      );
+      renderMovies();
+    });
+
+    document.querySelector('a[href="#movies"]').addEventListener("click", () => {
+      showFavorites = false;
+      renderMovies();
+    });
+
+    document.getElementById("close-dialog").addEventListener("click", () => {
+      document.getElementById("movie-dialog").close();
+    });
+
+    renderMovies();
+  </script>
+</body>
+</html>
